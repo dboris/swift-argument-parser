@@ -58,7 +58,10 @@ struct Mutex<State> {
     }
 
     fileprivate static func deinitialize(_ platformLock: PlatformLock) {
-      #if canImport(Bionic) || canImport(Glibc) || canImport(Musl)
+      // The same arm order as `initialize`/`lock`/`unlock`: where `os` is importable the
+      // primitive is an `os_unfair_lock`, which has nothing to destroy -- even on a platform
+      // that also has Glibc/Bionic/Musl (an SDK that vends an `os` module off Darwin).
+      #if !canImport(os) && (canImport(Bionic) || canImport(Glibc) || canImport(Musl))
       pthread_mutex_destroy(platformLock)
       #endif
       platformLock.deinitialize(count: 1)
